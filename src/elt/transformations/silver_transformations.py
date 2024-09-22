@@ -32,6 +32,7 @@ class SilverTransformer:
                 data_movimentacao DATE,
                 quantidade INTEGER,
                 tipo_acao VARCHAR,
+                tipo_negociacao VARCHAR,
                 extracted_date DATE
             );
         """)
@@ -131,6 +132,7 @@ class SilverTransformer:
                 data_movimentacao,
                 quantidade,
                 tipo_acao,
+                tipo_negociacao,
                 _extracted_date AS extracted_date
             FROM read_parquet('{bronze_path}/sheets/negociacoes/*.parquet')
         """)

@@ -71,10 +71,11 @@ class GoldTransformer:
         """)
 
         self.db_connection.execute("""
-            CREATE OR REPLACE TABLE gold.dim_tipo_ativo (
+            CREATE OR REPLACE TABLE gold.dim_tipo (
                 id INTEGER PRIMARY KEY,
                 tipo_ativo VARCHAR,
-                tipo_acao VARCHAR
+                tipo_acao VARCHAR,
+                tipo_negociacao VARCHAR
             );
         """)
 
@@ -147,15 +148,17 @@ class GoldTransformer:
         """)
 
         self.db_connection.execute(f"""
-            INSERT INTO gold.dim_tipo_ativo
+            INSERT INTO gold.dim_tipo
             SELECT
-                row_number() OVER (ORDER BY tipo_ativo, tipo_acao) AS id,
+                row_number() OVER (ORDER BY tipo_ativo, tipo_acao, tipo_negociacao) AS id,
                 tipo_ativo,
-                tipo_acao
+                tipo_acao,
+                tipo_negociacao
             FROM (
                 SELECT DISTINCT
                     tipo_ativo,
-                    tipo_acao
+                    tipo_acao,
+                    tipo_negociacao
                 FROM silver.negociacoes
             ) AS distinct_negociacoes;
         """)
