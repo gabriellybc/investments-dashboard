@@ -171,26 +171,26 @@ class BronzeTransformer:
             SELECT
                 row_number() OVER () + (SELECT max_id FROM max_id) AS id,
                 new.papel AS ticker,
-                new.cotação AS cotacao,  -- Ajuste o nome da coluna aqui
+                new.cotação AS cotacao,
                 new.p_l,
                 new.p_vp,
                 new.psr,
-                CAST(REPLACE(REPLACE(REPLACE(new.divyield, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS dividend_yield,  -- Ajuste o nome da coluna aqui
+                CAST(REPLACE(REPLACE(REPLACE(new.divyield, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS dividend_yield,
                 new.p_ativo,
-                new.p_capgiro AS p_capital_giro,  -- Ajuste o nome da coluna aqui
+                new.p_capgiro AS p_capital_giro,
                 new.p_ebit,
-                new.p_ativ_circliq AS p_ativo_circ_liq,  -- Ajuste o nome da coluna aqui
+                new.p_ativ_circliq AS p_ativo_circ_liq,
                 new.ev_ebit,
                 new.ev_ebitda,
-                CAST(REPLACE(REPLACE(REPLACE(new.mrg_ebit, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS mrg_ebit,  -- Ajuste o nome da coluna aqui
-                CAST(REPLACE(REPLACE(REPLACE(new.mrg_líq, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS mrg_liquida,  -- Ajuste o nome da coluna aqui
-                new.liq_corr AS liquidez_corr,  -- Ajuste o nome da coluna aqui
+                CAST(REPLACE(REPLACE(REPLACE(new.mrg_ebit, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS mrg_ebit,
+                CAST(REPLACE(REPLACE(REPLACE(new.mrg_líq, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS mrg_liquida,
+                new.liq_corr AS liquidez_corr,
                 CAST(REPLACE(REPLACE(REPLACE(new.roic, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS roic,
                 CAST(REPLACE(REPLACE(REPLACE(new.roe, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS roe,
-                new.liq2meses AS liquidez_2_meses,  -- Ajuste o nome da coluna aqui
-                new.patrim_líq AS patrimonio_liquido,  -- Ajuste o nome da coluna aqui
-                new.dívbrut__patrim AS div_bruta_patrim,  -- Ajuste o nome da coluna aqui
-                CAST(REPLACE(REPLACE(REPLACE(new.cresc_rec5a, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS cres_rec_5a,  -- Ajuste o nome da coluna aqui
+                new.liq2meses AS liquidez_2_meses,
+                new.patrim_líq AS patrimonio_liquido,
+                new.dívbrut__patrim AS div_bruta_patrim,
+                CAST(REPLACE(REPLACE(REPLACE(new.cresc_rec5a, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS cres_rec_5a,
                 new._extracted_date AS extracted_date
             FROM read_parquet('{landing_path}/fundamentus/{datetime.now().strftime("%Y-%m-%d")}.parquet') AS new
             LEFT JOIN bronze.fundamentus_resultado AS old

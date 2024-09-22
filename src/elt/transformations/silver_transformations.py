@@ -43,15 +43,15 @@ class SilverTransformer:
                 id INTEGER PRIMARY KEY,
                 tempo_id INTEGER,
                 acao_id INTEGER,
+                ticker VARCHAR,
                 cotacao FLOAT,
-                change FLOAT,
                 p_vp FLOAT,
                 dividend_yield FLOAT,
                 ev_ebit FLOAT,
                 roic FLOAT,
                 p_l FLOAT,
-                liq_2_meses FLOAT,
-                cresc_rec_5a FLOAT
+                liquidez_2_meses FLOAT,
+                cres_rec_5a FLOAT
             );
         """)
 
@@ -60,8 +60,8 @@ class SilverTransformer:
                 id INTEGER PRIMARY KEY,
                 tempo_id INTEGER,
                 acao_id INTEGER,
+                ticker VARCHAR,
                 cotacao FLOAT,
-                change FLOAT,
                 p_vp FLOAT,
                 dividend_yield FLOAT,
                 ev_ebit FLOAT,
@@ -93,6 +93,7 @@ class SilverTransformer:
             INSERT INTO silver.dim_acoes
             SELECT
                 id,
+                ticker,
                 name,
                 logo,
                 sector,
@@ -113,8 +114,8 @@ class SilverTransformer:
                 fd.ev_ebit,
                 fd.roic,
                 fd.p_l,
-                fd.liq_2_meses,
-                fd.cresc_rec_5a
+                fd.liquidez_2_meses,
+                fd.cres_rec_5a
             FROM bronze.fundamentus_resultado AS fd
             LEFT JOIN bronze.tempo AS tempo
                 ON fd.extracted_date = tempo.data
@@ -138,12 +139,17 @@ class SilverTransformer:
                 p_l
             FROM silver.fato_indicadores
             WHERE 
-                liq_2_meses > 100000
+                liquidez_2_meses > 100000
                 AND cotacao > 0
                 AND ev_ebit > 0
                 AND p_vp < 1
                 AND roic > 0.1
                 AND p_l > 0
                 AND cres_rec_5a > 0
+            QUALIFY ROW_NUMBER() OVER (
+                PARTITION BY ticker, cotacao, p_vp, dividend_yield, ev_ebit, roic, p_l
+                ORDER BY ticker, cotacao, p_vp, dividend_yield, ev_ebit, roic, p_l
+            ) = 1
         """)
+
         print("Dados transformados na camada Silver.")

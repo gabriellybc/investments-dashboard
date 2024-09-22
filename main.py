@@ -22,8 +22,8 @@ extractor.extract_brapi()
 transformer = DataTransformer(db_conn, config)
 transformer.transform_data()
 
-loader = DataLoader(db_conn, config)
-loader.load_data()
+# loader = DataLoader(db_conn, config)
+# loader.load_data()
 
 # Fechando a conexão com o banco
 db_conn.close()
