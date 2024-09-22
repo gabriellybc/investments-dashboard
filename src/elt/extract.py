@@ -29,9 +29,9 @@ class DataExtractor:
         df_tabela_acoes.columns = df_tabela_acoes.columns.str.lower().str.replace(' ', '_').str.replace('/', '_').str.replace('.', '')
         df_tabela_acoes["_extracted_date"] = pd.Timestamp.now().normalize()
         formatted_datetime = datetime.now().strftime("%Y-%m-%d")
-        landing_path = Path(self.config['paths']['landing']) / 'fundamentus' / f'{formatted_datetime}.parquet'
-        df_tabela_acoes.to_parquet(landing_path, index=False)
-        print(f"Dados extraídos e salvos em {landing_path}")
+        bronze_path = Path(self.config['paths']['bronze']) / 'fundamentus' / f'{formatted_datetime}.parquet'
+        df_tabela_acoes.to_parquet(bronze_path, index=False)
+        print(f"Dados extraídos e salvos em {bronze_path}")
 
         # list_info_acoes = []
         # for row in df_tabela_acoes.itertuples(index=False):
@@ -55,8 +55,8 @@ class DataExtractor:
         #     }
         #     list_info_acoes.append(dict_info_acoes)
         # df_info_acoes = pd.DataFrame(list_info_acoes)
-        # landing_path = Path(self.config['paths']['landing']) / 'yfinance' / 'info' / f'{formatted_datetime}.parquet'
-        # df_info_acoes.to_parquet(landing_path, index=False)
+        # bronze_path = Path(self.config['paths']['bronze']) / 'yfinance' / 'info' / f'{formatted_datetime}.parquet'
+        # df_info_acoes.to_parquet(bronze_path, index=False)
     
 
     def extract_brapi(self) -> None:
@@ -82,9 +82,9 @@ class DataExtractor:
         df_info_acoes = pd.DataFrame(list_info_acoes)
         df_info_acoes["_extracted_date"] = pd.Timestamp.now().normalize()
         formatted_datetime = datetime.now().strftime("%Y-%m-%d")
-        landing_path = Path(self.config['paths']['landing']) / 'brapi' / f'{formatted_datetime}.parquet'
-        df_info_acoes.to_parquet(landing_path, index=False)
-        print(f"Dados extraídos e salvos em {landing_path}")
+        bronze_path = Path(self.config['paths']['bronze']) / 'brapi' / f'{formatted_datetime}.parquet'
+        df_info_acoes.to_parquet(bronze_path, index=False)
+        print(f"Dados extraídos e salvos em {bronze_path}")
 
 
     def extract_usuarios_negociacoes(self) -> None:
@@ -92,16 +92,16 @@ class DataExtractor:
         usuarios_negociacoes_path = Path(self.config['paths']['usuarios_negociacoes'])
         df_usuarios = pd.read_excel(usuarios_negociacoes_path, sheet_name="usuarios")
         df_usuarios["_extracted_date"] = pd.Timestamp.now().normalize()
-        landing_path = Path(self.config['paths']['landing']) / 'sheets' / 'usuarios' / 'usuarios.parquet'
-        df_usuarios.to_parquet(landing_path, index=False)
-        print(f"Dados extraídos e salvos em {landing_path}")
+        bronze_path = Path(self.config['paths']['bronze']) / 'sheets' / 'usuarios' / 'usuarios.parquet'
+        df_usuarios.to_parquet(bronze_path, index=False)
+        print(f"Dados extraídos e salvos em {bronze_path}")
 
         for row in df_usuarios.itertuples(index=False):
             df_negociacoes = pd.read_excel(usuarios_negociacoes_path, sheet_name=str(row.id))
             df_negociacoes["usuario_id"] = str(row.id)
             df_negociacoes["_extracted_date"] = pd.Timestamp.now().normalize()
-            landing_path = Path(self.config['paths']['landing']) / 'sheets' / 'negociacoes' / f'{row.id}.parquet'
-            df_negociacoes.to_parquet(landing_path, index=False)
+            bronze_path = Path(self.config['paths']['bronze']) / 'sheets' / 'negociacoes' / f'{row.id}.parquet'
+            df_negociacoes.to_parquet(bronze_path, index=False)
             del df_negociacoes
             gc.collect()
     print(f"Transações extraídas e salvas")

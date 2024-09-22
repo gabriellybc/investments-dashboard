@@ -1,3 +1,5 @@
+from pathlib import Path
+from datetime import datetime
 from src.utils.db_utils import DuckDBConnection
 
 
@@ -8,163 +10,191 @@ class SilverTransformer:
 
 
     def create_tables(self) -> None:
-        """Cria as tabelas necessárias no esquema Bronze."""
+        """Cria as tabelas necessárias no esquema Silver."""
         self.db_connection.execute("""
             CREATE SCHEMA IF NOT EXISTS silver;
         """)
 
         self.db_connection.execute("""
-            CREATE TABLE IF NOT EXISTS silver.dim_tempo AS
+            CREATE TABLE IF NOT EXISTS silver.tempo AS
             SELECT
-                id,
-                data,
-                EXTRACT(YEAR FROM data) AS ano,
-                EXTRACT(MONTH FROM data) AS mes,
-                EXTRACT(DAY FROM data) AS dia,
-                EXTRACT(WEEK FROM data) AS semana,
-                EXTRACT(QUARTER FROM data) AS trimestre,
-                IF(EXTRACT(MONTH FROM data) <= 6, 1, 2) AS semestre
-            FROM bronze.tempo;
+                row_number() OVER () AS id,
+                generate_series AS data
+            FROM generate_series(DATE '2010-01-01', CURRENT_DATE(), INTERVAL 1 DAY)
         """)
 
         self.db_connection.execute("""
-            CREATE OR REPLACE TABLE silver.dim_acoes (
+            CREATE OR REPLACE TABLE silver.negociacoes (
+                id INTEGER PRIMARY KEY,
+                usuario_id INTEGER,
+                tipo_ativo VARCHAR,
+                ticker VARCHAR,
+                data_movimentacao DATE,
+                quantidade INTEGER,
+                tipo_acao VARCHAR,
+                extracted_date DATE
+            );
+        """)
+
+        self.db_connection.execute("""
+            CREATE OR REPLACE TABLE silver.usuarios (
+                id INTEGER PRIMARY KEY,
+                nome VARCHAR,
+                email VARCHAR UNIQUE,
+                extracted_date DATE               
+            );
+        """)
+
+        self.db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS silver.brapi_quote_list (
                 id INTEGER PRIMARY KEY,
                 ticker VARCHAR,
                 name VARCHAR,
+                close FLOAT,
+                change FLOAT,
+                volume INTEGER,
+                market_cap FLOAT,
                 logo VARCHAR,
                 sector VARCHAR,
                 type VARCHAR,
+                extracted_date DATE
             );
         """)
 
         self.db_connection.execute("""
-            CREATE OR REPLACE TABLE silver.fact_indicadores (
+            CREATE TABLE IF NOT EXISTS silver.fundamentus_resultado (
                 id INTEGER PRIMARY KEY,
-                tempo_id INTEGER,
-                acao_id INTEGER,
                 ticker VARCHAR,
                 cotacao FLOAT,
-                p_vp FLOAT,
-                dividend_yield FLOAT,
-                ev_ebit FLOAT,
-                roic FLOAT,
                 p_l FLOAT,
-                liquidez_2_meses FLOAT,
-                cres_rec_5a FLOAT
-            );
-        """)
-
-        self.db_connection.execute("""
-            CREATE OR REPLACE TABLE silver.fact_oportunidades (
-                id INTEGER PRIMARY KEY,
-                tempo_id INTEGER,
-                acao_id INTEGER,
-                ticker VARCHAR,
-                cotacao FLOAT,
                 p_vp FLOAT,
+                psr FLOAT,
                 dividend_yield FLOAT,
+                p_ativo FLOAT,
+                p_capital_giro FLOAT,
+                p_ebit FLOAT,
+                p_ativo_circ_liq FLOAT,
                 ev_ebit FLOAT,
+                ev_ebitda FLOAT,
+                mrg_ebit FLOAT,
+                mrg_liquida FLOAT,
+                liquidez_corr FLOAT,
                 roic FLOAT,
-                p_l FLOAT
+                roe FLOAT,
+                liquidez_2_meses FLOAT,
+                patrimonio_liquido FLOAT,
+                div_bruta_patrim FLOAT,
+                cres_rec_5a FLOAT,
+                extracted_date DATE
             );
         """)
-
-        # self.db_connection.execute("""
-        #     CREATE OR REPLACE TABLE silver.fact_negociacoes (
-        #         id INTEGER PRIMARY KEY,
-        #         usuario_id INTEGER,
-        #         acao_id INTEGER,
-        #         data_id INTEGER,
-        #         quantidade INTEGER,
-        #         valor FLOAT,
-        #         valor_unitario FLOAT, 
-        #         tipo_ativo VARCHAR,
-        #         tipo_acao VARCHAR,
-        #         ticker VARCHAR,
-        #     );
-        # """)
 
 
     def transform(self) -> None:
+        bronze_path = Path(self.config['paths']['bronze'])
+
         self.db_connection.execute(f"""
-            INSERT INTO silver.dim_tempo
+            INSERT INTO silver.tempo
+            WITH max_id AS (
+                SELECT 
+                    MAX(id) AS max_id
+                FROM silver.tempo
+            ),
+            max_date AS (
+                SELECT
+                    MAX(data) AS max_date
+                FROM silver.tempo
+            )
             SELECT
-                new.id,
-                new.data,
-                EXTRACT(YEAR FROM new.data) AS ano,
-                EXTRACT(MONTH FROM new.data) AS mes,
-                EXTRACT(DAY FROM new.data) AS dia,
-                EXTRACT(WEEK FROM new.data) AS semana,
-                EXTRACT(QUARTER FROM new.data) AS trimestre,
-                IF(EXTRACT(MONTH FROM new.data) <= 6, 1, 2) AS semestre
-            FROM bronze.tempo AS new
-            LEFT JOIN silver.dim_tempo AS old
-                ON new.id = old.id
+                row_number() OVER () + (SELECT * FROM max_id) AS id,
+                CURRENT_DATE() AS data
+            WHERE CURRENT_DATE() > (SELECT * FROM max_date)
+        """)
+
+        self.db_connection.execute(f"""
+            INSERT INTO silver.usuarios
+            SELECT
+                id,
+                nome,
+                email,
+                _extracted_date AS extracted_date
+            FROM read_parquet('{bronze_path}/sheets/usuarios/usuarios.parquet')
+        """)
+
+        self.db_connection.execute(f"""
+            INSERT INTO silver.negociacoes
+            SELECT
+                row_number() OVER () AS id,
+                usuario_id,
+                tipo_ativo,
+                ticker,
+                data_movimentacao,
+                quantidade,
+                tipo_acao,
+                _extracted_date AS extracted_date
+            FROM read_parquet('{bronze_path}/sheets/negociacoes/*.parquet')
+        """)
+
+        self.db_connection.execute(f"""
+            INSERT INTO silver.brapi_quote_list
+            WITH max_id AS (
+                SELECT COALESCE(MAX(id), 0) AS max_id
+                FROM silver.brapi_quote_list
+            )
+            SELECT
+                row_number() OVER () + (SELECT max_id FROM max_id) AS id,
+                new.stock AS ticker,
+                new.name,
+                new.close,
+                new.change,
+                new.volume,
+                new.market_cap,
+                new.logo,
+                new.sector,
+                new.type,
+                new._extracted_date AS extracted_date
+            FROM read_parquet('{bronze_path}/brapi/{datetime.now().strftime("%Y-%m-%d")}.parquet') AS new
+            LEFT JOIN silver.brapi_quote_list AS old
+                ON new.stock = old.ticker
+                AND new._extracted_date = old.extracted_date
             WHERE old.id IS NULL
         """)
-
+        
         self.db_connection.execute(f"""
-            INSERT INTO silver.dim_acoes
+            INSERT INTO silver.fundamentus_resultado
+            WITH max_id AS (
+                SELECT COALESCE(MAX(id), 0) AS max_id
+                FROM silver.fundamentus_resultado
+            )
             SELECT
-                id,
-                ticker,
-                name,
-                logo,
-                sector,
-                type
-            FROM bronze.brapi_quote_list
-        """)
-
-        self.db_connection.execute(f"""
-            INSERT INTO silver.fact_indicadores
-            SELECT 
-                fd.id,
-                tempo.id AS tempo_id,
-                brapi.id AS acao_id,
-                fd.ticker,
-                COALESCE(fd.cotacao, brapi.close) AS cotacao,
-                fd.p_vp,
-                fd.dividend_yield,
-                fd.ev_ebit,
-                fd.roic,
-                fd.p_l,
-                fd.liquidez_2_meses,
-                fd.cres_rec_5a
-            FROM bronze.fundamentus_resultado AS fd
-            LEFT JOIN bronze.tempo AS tempo
-                ON fd.extracted_date = tempo.data
-            LEFT JOIN bronze.brapi_quote_list AS brapi
-                ON fd.ticker = brapi.ticker
-                AND fd.extracted_date = brapi.extracted_date
-        """)
-
-        self.db_connection.execute(f"""
-            INSERT INTO silver.fact_oportunidades
-            SELECT 
-                id,
-                tempo_id,
-                acao_id,
-                ticker,
-                cotacao,
-                p_vp,
-                dividend_yield,
-                ev_ebit,
-                roic,
-                p_l
-            FROM silver.fact_indicadores
-            WHERE 
-                liquidez_2_meses > 100000
-                AND cotacao > 0
-                AND ev_ebit > 0
-                AND p_vp < 1
-                AND roic > 0.1
-                AND p_l > 0
-                AND cres_rec_5a > 0
-            QUALIFY ROW_NUMBER() OVER (
-                PARTITION BY ticker, cotacao, p_vp, dividend_yield, ev_ebit, roic, p_l
-                ORDER BY ticker, cotacao, p_vp, dividend_yield, ev_ebit, roic, p_l
-            ) = 1
+                row_number() OVER () + (SELECT max_id FROM max_id) AS id,
+                new.papel AS ticker,
+                new.cotação AS cotacao,
+                new.p_l,
+                new.p_vp,
+                new.psr,
+                CAST(REPLACE(REPLACE(REPLACE(new.divyield, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS dividend_yield,
+                new.p_ativo,
+                new.p_capgiro AS p_capital_giro,
+                new.p_ebit,
+                new.p_ativ_circliq AS p_ativo_circ_liq,
+                new.ev_ebit,
+                new.ev_ebitda,
+                CAST(REPLACE(REPLACE(REPLACE(new.mrg_ebit, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS mrg_ebit,
+                CAST(REPLACE(REPLACE(REPLACE(new.mrg_líq, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS mrg_liquida,
+                new.liq_corr AS liquidez_corr,
+                CAST(REPLACE(REPLACE(REPLACE(new.roic, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS roic,
+                CAST(REPLACE(REPLACE(REPLACE(new.roe, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS roe,
+                new.liq2meses AS liquidez_2_meses,
+                new.patrim_líq AS patrimonio_liquido,
+                new.dívbrut__patrim AS div_bruta_patrim,
+                CAST(REPLACE(REPLACE(REPLACE(new.cresc_rec5a, '.', ''), ',', '.'), '%', '') AS FLOAT) / 100 AS cres_rec_5a,
+                new._extracted_date AS extracted_date
+            FROM read_parquet('{bronze_path}/fundamentus/{datetime.now().strftime("%Y-%m-%d")}.parquet') AS new
+            LEFT JOIN silver.fundamentus_resultado AS old
+                ON new.papel = old.ticker
+                AND new._extracted_date = old.extracted_date
+            WHERE old.id IS NULL
         """)
 
         print("Dados transformados na camada Silver.")

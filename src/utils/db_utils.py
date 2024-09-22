@@ -2,6 +2,7 @@ import duckdb
 from pathlib import Path
 import pandas as pd
 
+
 class DuckDBConnection:
     def __init__(self, db_path: str) -> None:
         """
@@ -11,6 +12,7 @@ class DuckDBConnection:
         """
         self.db_path = Path(db_path)
         self.conn = self.connect()
+
 
     def connect(self) -> duckdb.DuckDBPyConnection:
         """Conecta ao banco de dados DuckDB no caminho especificado."""
@@ -26,7 +28,7 @@ class DuckDBConnection:
         self.conn.execute(query)
 
 
-    def sql_head(self, query: str) -> pd.DataFrame:
+    def sql(self, query: str) -> pd.DataFrame:
         """
         Executa uma query SQL e retorna um DataFrame.
 
@@ -34,6 +36,7 @@ class DuckDBConnection:
         :return: Um DataFrame contendo os resultados da consulta.
         """
         return self.conn.sql(query).df()
+
 
     def save_parquet(self, table_name: str, output_path: str) -> None:
         """
@@ -45,6 +48,7 @@ class DuckDBConnection:
         output_path = Path(output_path)
         query = f"COPY (SELECT * FROM {table_name}) TO '{output_path}' (FORMAT 'parquet')"
         self.conn.execute(query)
+
 
     def close(self) -> None:
         """Fecha a conexão com o banco de dados."""

@@ -5,6 +5,7 @@ from src.elt.transform import DataTransformer
 from src.elt.load import DataLoader
 from pathlib import Path
 
+
 # Carregando a configuração do projeto
 config_path = Path('configs/settings.yaml')
 with open(config_path, 'r') as file:
