@@ -235,7 +235,7 @@ class GoldTransformer:
                 neg.usuario_id,
                 fi.acao_id,
                 tempo.id AS tempo_id,
-                ta.id AS tipo_ativo_id,
+                ta.id AS tipo_id,
                 neg.ticker,
                 neg.quantidade,
                 (fi.cotacao * neg.quantidade) AS valor_total,
