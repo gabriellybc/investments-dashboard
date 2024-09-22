@@ -93,7 +93,7 @@ class GoldTransformer:
                 usuario_id INTEGER,
                 acao_id INTEGER,
                 tempo_id INTEGER,
-                tipo_ativo_id INTEGER,
+                tipo_id INTEGER,
                 ticker VARCHAR,
                 quantidade INTEGER,
                 valor_total FLOAT,
