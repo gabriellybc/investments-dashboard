@@ -23,7 +23,8 @@ class GoldTransformer:
                 EXTRACT(DAY FROM data) AS dia,
                 EXTRACT(WEEK FROM data) AS semana,
                 EXTRACT(QUARTER FROM data) AS trimestre,
-                IF(EXTRACT(MONTH FROM data) <= 6, 1, 2) AS semestre
+                IF(EXTRACT(MONTH FROM data) <= 6, 1, 2) AS semestre,
+                CAST(data AS VARCHAR) AS data_str
             FROM silver.tempo;
         """)
 
@@ -120,7 +121,8 @@ class GoldTransformer:
                 EXTRACT(DAY FROM new.data) AS dia,
                 EXTRACT(WEEK FROM new.data) AS semana,
                 EXTRACT(QUARTER FROM new.data) AS trimestre,
-                IF(EXTRACT(MONTH FROM new.data) <= 6, 1, 2) AS semestre
+                IF(EXTRACT(MONTH FROM new.data) <= 6, 1, 2) AS semestre,
+                CAST(new.data AS VARCHAR) AS data_str
             FROM silver.tempo AS new
             LEFT JOIN gold.dim_tempo AS old
                 ON new.id = old.id
@@ -237,7 +239,7 @@ class GoldTransformer:
                 tempo.id AS tempo_id,
                 tipo.id AS tipo_id,
                 neg.ticker,
-                neg.quantidade,
+                IF(neg.tipo_negociacao = 'venda', -neg.quantidade, neg.quantidade) AS quantidade,
                 (fi.cotacao * neg.quantidade) AS valor_total,
                 fi.cotacao,
                 fi.p_vp,
