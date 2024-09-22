@@ -15,22 +15,12 @@ class DataLoader:
 
     def load_data(self) -> None:
         """Carrega dados transformados e salva no formato Parquet na camada Gold."""
-        silver_path = Path(self.config['paths']['silver'])
         gold_path = Path(self.config['paths']['gold'])
 
-        # Carregar dados transformados e criar as tabelas
-        self.db_connection.sql(f"""
-            CREATE TABLE fact_acoes AS
-            SELECT * FROM read_parquet('{silver_path}/transformed_acoes.parquet');
-        """)
+        self.db_connection.save_parquet('dim_tempo', gold_path / 'dim_tempo.parquet')
+        self.db_connection.save_parquet('dim_acoes', gold_path / 'dim_acoes.parquet')
 
-        self.db_connection.sql(f"""
-            CREATE TABLE fact_transacoes AS
-            SELECT * FROM read_parquet('{silver_path}/transformed_transacoes.parquet');
-        """)
-
-        # Salvar as tabelas finais em Parquet
-        self.db_connection.save_parquet('fact_acoes', gold_path / 'fact_acoes.parquet')
-        self.db_connection.save_parquet('fact_transacoes', gold_path / 'fact_transacoes.parquet')
+        self.db_connection.save_parquet('fact_oportunidades', gold_path / 'fact_oportunidades.parquet')
+        self.db_connection.save_parquet('fact_indicadores', gold_path / 'fact_indicadores.parquet')
 
         print("Dados carregados e salvos na camada Gold.")

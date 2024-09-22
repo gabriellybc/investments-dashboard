@@ -39,7 +39,7 @@ class SilverTransformer:
         """)
 
         self.db_connection.execute("""
-            CREATE OR REPLACE TABLE silver.fato_indicadores (
+            CREATE OR REPLACE TABLE silver.fact_indicadores (
                 id INTEGER PRIMARY KEY,
                 tempo_id INTEGER,
                 acao_id INTEGER,
@@ -56,7 +56,7 @@ class SilverTransformer:
         """)
 
         self.db_connection.execute("""
-            CREATE OR REPLACE TABLE silver.fato_oportunidades (
+            CREATE OR REPLACE TABLE silver.fact_oportunidades (
                 id INTEGER PRIMARY KEY,
                 tempo_id INTEGER,
                 acao_id INTEGER,
@@ -69,6 +69,21 @@ class SilverTransformer:
                 p_l FLOAT
             );
         """)
+
+        # self.db_connection.execute("""
+        #     CREATE OR REPLACE TABLE silver.fact_negociacoes (
+        #         id INTEGER PRIMARY KEY,
+        #         usuario_id INTEGER,
+        #         acao_id INTEGER,
+        #         data_id INTEGER,
+        #         quantidade INTEGER,
+        #         valor FLOAT,
+        #         valor_unitario FLOAT, 
+        #         tipo_ativo VARCHAR,
+        #         tipo_acao VARCHAR,
+        #         ticker VARCHAR,
+        #     );
+        # """)
 
 
     def transform(self) -> None:
@@ -102,7 +117,7 @@ class SilverTransformer:
         """)
 
         self.db_connection.execute(f"""
-            INSERT INTO silver.fato_indicadores
+            INSERT INTO silver.fact_indicadores
             SELECT 
                 fd.id,
                 tempo.id AS tempo_id,
@@ -125,7 +140,7 @@ class SilverTransformer:
         """)
 
         self.db_connection.execute(f"""
-            INSERT INTO silver.fato_oportunidades
+            INSERT INTO silver.fact_oportunidades
             SELECT 
                 id,
                 tempo_id,
@@ -137,7 +152,7 @@ class SilverTransformer:
                 ev_ebit,
                 roic,
                 p_l
-            FROM silver.fato_indicadores
+            FROM silver.fact_indicadores
             WHERE 
                 liquidez_2_meses > 100000
                 AND cotacao > 0
