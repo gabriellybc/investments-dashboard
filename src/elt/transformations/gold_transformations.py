@@ -24,7 +24,7 @@ class GoldTransformer:
                 EXTRACT(WEEK FROM data) AS semana,
                 EXTRACT(QUARTER FROM data) AS trimestre,
                 IF(EXTRACT(MONTH FROM data) <= 6, 1, 2) AS semestre,
-                CAST(data AS VARCHAR) AS data_str
+                STRFTIME(data, '%Y-%m-%d') AS data_str
             FROM silver.tempo;
         """)
 
@@ -122,7 +122,7 @@ class GoldTransformer:
                 EXTRACT(WEEK FROM new.data) AS semana,
                 EXTRACT(QUARTER FROM new.data) AS trimestre,
                 IF(EXTRACT(MONTH FROM new.data) <= 6, 1, 2) AS semestre,
-                CAST(new.data AS VARCHAR) AS data_str
+                STRFTIME(new.data, '%Y-%m-%d') AS data_str
             FROM silver.tempo AS new
             LEFT JOIN gold.dim_tempo AS old
                 ON new.id = old.id
