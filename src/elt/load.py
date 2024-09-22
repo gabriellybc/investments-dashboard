@@ -19,7 +19,7 @@ class DataLoader:
 
         self.db_connection.save_parquet('gold.dim_tempo', gold_path / 'dim_tempo.parquet')
         self.db_connection.save_parquet('gold.dim_acoes', gold_path / 'dim_acoes.parquet')
-        self.db_connection.save_parquet('gold.dim_tipo_ativo', gold_path / 'dim_tipo_ativo.parquet')
+        self.db_connection.save_parquet('gold.dim_tipo', gold_path / 'dim_tipo.parquet')
         self.db_connection.save_parquet('gold.dim_usuarios', gold_path / 'dim_usuarios.parquet')
 
         self.db_connection.save_parquet('gold.fact_oportunidades', gold_path / 'fact_oportunidades.parquet')
