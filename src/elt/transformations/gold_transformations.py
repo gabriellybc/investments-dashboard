@@ -235,7 +235,7 @@ class GoldTransformer:
                 neg.usuario_id,
                 fi.acao_id,
                 tempo.id AS tempo_id,
-                ta.id AS tipo_id,
+                tipo.id AS tipo_id,
                 neg.ticker,
                 neg.quantidade,
                 (fi.cotacao * neg.quantidade) AS valor_total,
@@ -253,10 +253,10 @@ class GoldTransformer:
             LEFT JOIN gold.fact_indicadores AS fi
                 ON neg.ticker = fi.ticker
                 AND tempo.id = fi.tempo_id
-            LEFT JOIN gold.dim_tipo AS ta
-                ON neg.tipo_ativo = ta.tipo_ativo
-                AND neg.tipo_acao = ta.tipo_acao
-                AND neg.tipo_negociacao = ta.tipo_negociacao
+            LEFT JOIN gold.dim_tipo AS tipo
+                ON neg.tipo_ativo = tipo.tipo_ativo
+                AND neg.tipo_acao = tipo.tipo_acao
+                AND neg.tipo_negociacao = tipo.tipo_negociacao
         """)
 
         print("Dados transformados na camada Gold.")
