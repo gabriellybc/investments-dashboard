@@ -32,31 +32,6 @@ class DataExtractor:
         bronze_path = Path(self.config['paths']['bronze']) / 'fundamentus' / f'{formatted_datetime}.parquet'
         df_tabela_acoes.to_parquet(bronze_path, index=False)
         print(f"Dados extraídos e salvos em {bronze_path}")
-
-        # list_info_acoes = []
-        # for row in df_tabela_acoes.itertuples(index=False):
-        #     ticker = f'{row.papel}.SA'
-        #     info = yf.Ticker(ticker).info
-        #     if len(info) == 1:
-        #         continue
-        #     dict_info_acoes = {
-        #         'ticker': ticker,
-        #         'state': info.get('state'),
-        #         'country': info.get('country'),
-        #         'industry': info.get('industry'),
-        #         'sector': info.get('sector'),
-        #         'city': info.get('city'),
-        #         'website': info.get('website'),
-        #         'currency': info.get('currency'),
-        #         'shortName': info.get('shortName'),
-        #         'longName': info.get('longName'),
-        #         'timeZoneFullName': info.get('timeZoneFullName'),
-        #         'exchangeTimezoneName': info.get('exchangeTimezoneName'),
-        #     }
-        #     list_info_acoes.append(dict_info_acoes)
-        # df_info_acoes = pd.DataFrame(list_info_acoes)
-        # bronze_path = Path(self.config['paths']['bronze']) / 'yfinance' / 'info' / f'{formatted_datetime}.parquet'
-        # df_info_acoes.to_parquet(bronze_path, index=False)
     
 
     def extract_brapi(self) -> None:
