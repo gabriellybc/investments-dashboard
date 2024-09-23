@@ -51,7 +51,7 @@ investments-dashboard/
 
 ## Descrição dos Diretórios e Arquivos
 - **configs/**: Contém arquivos de configuração, como ``settings.yaml``.
-- **data/**: Diretório onde os dados são armazenados em diferentes camadas (Bronze, Silver e Gold).
+- **data/**: Diretório onde os dados são armazenados em diferentes camadas (Bronze e Gold).
 - **db/**: Contém o banco de dados DuckDB.
 - **src/**: Diretório contendo o código-fonte do projeto.
   - **elt/**: Scripts de Extração, Transformação e Carga (ETL).
